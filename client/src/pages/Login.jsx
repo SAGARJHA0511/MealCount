@@ -23,7 +23,8 @@ export default function Login() {
     vendorId: "",
     rememberMe: false
   });
-  const { login } = useAuth();
+  
+  const { login, register, generateVendorId } = useAuth();
   const { toast } = useToast();
   
   // Show a welcome message for first-time visitors
@@ -58,9 +59,9 @@ export default function Login() {
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     const savedUsers = localStorage.getItem("registeredUsers");
     return savedUsers ? JSON.parse(savedUsers) : [
-      { email: "vendor@example.com", password: "password", name: "Vendor Demo", role: "vendor", vendorId: "V-12345" },
-      { email: "admin@example.com", password: "password", name: "Admin Demo", role: "client-admin", vendorId: "V-12345" },
-      { email: "employee@example.com", password: "password", name: "Employee Demo", role: "employee", vendorId: "V-12345" }
+      { email: "vendor@example.com", password: "password", name: "Vendor Demo", role: "vendor", vendorId: "VEN-ABC123" },
+      { email: "admin@example.com", password: "password", name: "Admin Demo", role: "client-admin", vendorId: "VEN-ABC123" },
+      { email: "employee@example.com", password: "password", name: "Employee Demo", role: "employee", vendorId: "VEN-ABC123" }
     ];
   });
 
@@ -171,7 +172,7 @@ export default function Login() {
       // Generate vendor ID for new vendors
       let vendorId = formData.vendorId;
       if (formData.role === "vendor") {
-        vendorId = "V-" + Math.floor(10000 + Math.random() * 90000);
+        vendorId = generateVendorId();
       }
       
       // Register new user
@@ -186,6 +187,9 @@ export default function Login() {
       const updatedUsers = [...registeredUsers, newUser];
       setRegisteredUsers(updatedUsers);
       localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers));
+      
+      // Register in AuthContext (handles redirects to login)
+      register(newUser, formData.role);
       
       // Show different success messages based on role
       if (formData.role === "vendor") {
