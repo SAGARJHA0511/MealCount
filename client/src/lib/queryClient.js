@@ -10,7 +10,7 @@ async function throwIfResNotOk(res) {
 export async function apiRequest(
   method,
   url,
-  data
+  data,
 ) {
   const res = await fetch(url, {
     method,
@@ -23,7 +23,7 @@ export async function apiRequest(
   return res;
 }
 
-export const getQueryFn = ({ on401: unauthorizedBehavior }) => 
+export const getQueryFn = ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const res = await fetch(queryKey[0], {
       credentials: "include",

@@ -1,19 +1,19 @@
-import { Route, Switch } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "./components/ui/toaster";
-import { TooltipProvider } from "./components/ui/tooltip";
-import NotFound from "./pages/not-found";
-import Login from "./pages/Login";
-import EmployeeDashboard from "./pages/employee/Dashboard";
-import ClientAdminDashboard from "./pages/client-admin/Dashboard";
-import VendorDashboard from "./pages/vendor/Dashboard";
-import VendorSpecialMenu from "./pages/vendor/SpecialMenu";
-import VendorVerifyCoupons from "./pages/vendor/VerifyCoupons";
-import VendorPrintReport from "./pages/vendor/PrintReport";
-import ClientAdminMealCounts from "./pages/client-admin/MealCounts";
-import ClientAdminFinalize from "./pages/client-admin/Finalize";
-import { AuthProvider } from "./contexts/AuthContext";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Login from "@/pages/Login";
+import EmployeeDashboard from "@/pages/employee/Dashboard";
+import ClientAdminDashboard from "@/pages/client-admin/Dashboard";
+import VendorDashboard from "@/pages/vendor/Dashboard";
+import VendorSpecialMenu from "@/pages/vendor/SpecialMenu";
+import VendorVerifyCoupons from "@/pages/vendor/VerifyCoupons";
+import VendorPrintReport from "@/pages/vendor/PrintReport";
+import ClientAdminMealCounts from "@/pages/client-admin/MealCounts";
+import ClientAdminFinalize from "@/pages/client-admin/Finalize";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 function Router() {
   return (
@@ -34,14 +34,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
           <Toaster />
           <Router />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
