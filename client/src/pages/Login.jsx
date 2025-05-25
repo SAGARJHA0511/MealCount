@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +8,11 @@ import { Form, FormItem, FormControl, FormLabel, FormMessage } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { Info } from "@/components/ui/icons";
 
 export default function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  // Default to registration mode for new users
+  const [isLogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,6 +22,19 @@ export default function Login() {
   });
   const { login } = useAuth();
   const { toast } = useToast();
+  
+  // Show a welcome message for new users
+  useEffect(() => {
+    const hasVisited = localStorage.getItem("hasVisitedBefore");
+    if (!hasVisited) {
+      toast({
+        title: "Welcome to MealMate!",
+        description: "Please register to get started with our meal management system.",
+        duration: 5000
+      });
+      localStorage.setItem("hasVisitedBefore", "true");
+    }
+  }, [toast]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

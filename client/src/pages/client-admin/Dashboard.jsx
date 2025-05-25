@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, FileDownload, Star } from "@/components/ui/icons";
+import { Menu, FileDownload, Star, CancelCircle, People } from "@/components/ui/icons";
 import { mealCounts, recentFeedback } from "@/data/mockData";
 
 export default function ClientAdminDashboard() {
@@ -14,6 +14,26 @@ export default function ClientAdminDashboard() {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
+      {/* Mobile sidebar */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 flex z-40 md:hidden">
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+            <div className="absolute top-0 right-0 -mr-12 pt-2">
+              <button
+                type="button"
+                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="sr-only">Close sidebar</span>
+                <CancelCircle className="h-6 w-6 text-white" />
+              </button>
+            </div>
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+      
       {/* Sidebar for desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar />

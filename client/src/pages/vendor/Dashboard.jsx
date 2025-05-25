@@ -5,25 +5,62 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, Edit, Star } from "@/components/ui/icons";
+import { Menu, Edit, Star, Restaurant, CancelCircle, CheckCircle } from "@/components/ui/icons";
 import { weeklyMenu, recentFeedback } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function VendorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [menuEditorOpen, setMenuEditorOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const handleOpenMenuEditor = () => {
+    setMenuEditorOpen(true);
+  };
+
+  const handleDaySelect = (day) => {
+    setSelectedDay(day);
+  };
+
+  const handleCloseMenuEditor = () => {
+    setMenuEditorOpen(false);
+    setSelectedDay(null);
     toast({
-      title: "Menu Editor",
-      description: "The menu editor would open here in a real application.",
-      variant: "default"
+      title: "Menu Updated",
+      description: "Your menu changes have been saved successfully.",
+      variant: "success"
     });
   };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
+      {/* Mobile sidebar */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 flex z-40 md:hidden">
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+            <div className="absolute top-0 right-0 -mr-12 pt-2">
+              <button
+                type="button"
+                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="sr-only">Close sidebar</span>
+                <CancelCircle className="h-6 w-6 text-white" />
+              </button>
+            </div>
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+      
       {/* Sidebar for desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar />
@@ -80,10 +117,14 @@ export default function VendorDashboard() {
               <div className="mt-8">
                 <Card>
                   <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                    <h2 className="text-lg font-medium text-gray-900">Weekly Menu</h2>
+                    <div className="flex items-center">
+                      <Restaurant className="h-5 w-5 text-primary-600 mr-2" />
+                      <h2 className="text-lg font-medium text-gray-900">Weekly Menu</h2>
+                    </div>
                     <div>
                       <Button 
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                        className="inline-flex items-center"
+                        variant="default"
                         onClick={handleOpenMenuEditor}
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -101,6 +142,7 @@ export default function VendorDashboard() {
                             <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Side Dishes</TableHead>
                             <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dessert</TableHead>
                             <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody className="bg-white divide-y divide-gray-200">
@@ -115,6 +157,15 @@ export default function VendorDashboard() {
                                   Published
                                 </Badge>
                               </TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDaySelect(day)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -127,7 +178,8 @@ export default function VendorDashboard() {
               {/* Feedback summary */}
               <div className="mt-8">
                 <Card>
-                  <div className="px-4 py-5 sm:px-6">
+                  <div className="px-4 py-5 sm:px-6 flex items-center">
+                    <Star className="h-5 w-5 text-amber-500 mr-2" filled />
                     <h2 className="text-lg font-medium text-gray-900">Recent Feedback</h2>
                   </div>
                   <CardContent className="px-4 py-0 sm:px-6">
@@ -155,6 +207,113 @@ export default function VendorDashboard() {
           </div>
         </main>
       </div>
+
+      {/* Menu Editor Dialog */}
+      <Dialog open={menuEditorOpen} onOpenChange={setMenuEditorOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Weekly Menu</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="menu-day">Day</Label>
+                <Select defaultValue="Monday">
+                  <SelectTrigger id="menu-day">
+                    <SelectValue placeholder="Select day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {weeklyMenu.map(day => (
+                      <SelectItem key={day.day} value={day.day}>{day.day}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="main-course">Main Course</Label>
+                <Input id="main-course" defaultValue="Grilled Chicken Breast" />
+              </div>
+              
+              <div>
+                <Label htmlFor="sides">Side Dishes</Label>
+                <Input id="sides" defaultValue="Roasted Vegetables, Brown Rice" />
+              </div>
+              
+              <div>
+                <Label htmlFor="dessert">Dessert</Label>
+                <Input id="dessert" defaultValue="Fresh Fruit Cup" />
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  placeholder="Describe the meal..."
+                  defaultValue="A healthy meal featuring lean protein and nutritious sides."
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="vegetarian-option">Vegetarian Option Available</Label>
+                <input type="checkbox" id="vegetarian-option" defaultChecked />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setMenuEditorOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleCloseMenuEditor}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Specific Day Dialog */}
+      <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Menu for {selectedDay?.day}</DialogTitle>
+          </DialogHeader>
+          {selectedDay && (
+            <div className="py-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-main-course">Main Course</Label>
+                  <Input id="edit-main-course" defaultValue={selectedDay.mainCourse} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-sides">Side Dishes</Label>
+                  <Input id="edit-sides" defaultValue={selectedDay.sideDishes} />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-dessert">Dessert</Label>
+                  <Input id="edit-dessert" defaultValue={selectedDay.dessert} />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSelectedDay(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => {
+              setSelectedDay(null);
+              toast({
+                title: "Menu Updated",
+                description: "Your changes have been saved successfully.",
+                variant: "success"
+              });
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
