@@ -8,7 +8,8 @@ import { Form, FormItem, FormControl, FormLabel, FormMessage } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { Info } from "@/components/ui/icons";
+import { Info, Restaurant, People, AccountCircle } from "@/components/ui/icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Login() {
   // Default to registration mode for new users
@@ -18,6 +19,8 @@ export default function Login() {
     password: "",
     confirmPassword: "",
     name: "",
+    role: "",
+    vendorId: "",
     rememberMe: false
   });
   const { login } = useAuth();
@@ -41,6 +44,13 @@ export default function Login() {
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value
+    });
+  };
+  
+  const handleSelectChange = (name, value) => {
+    setFormData({
+      ...formData,
+      [name]: value
     });
   };
 
@@ -76,19 +86,70 @@ export default function Login() {
         });
         return;
       }
+      
+      if (!formData.role) {
+        toast({
+          title: "Error",
+          description: "Please select your role",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Check if employee or admin needs vendor ID
+      if ((formData.role === "client-admin" || formData.role === "employee") && !formData.vendorId) {
+        toast({
+          title: "Error",
+          description: "Please enter the Vendor ID provided by your vendor",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Generate vendor ID for new vendors
+    let vendorId = "";
+    if (!isLogin && formData.role === "vendor") {
+      vendorId = "V-" + Math.floor(10000 + Math.random() * 90000);
     }
     
     // Demo login/register logic - in a real app this would call the API
     login({
       email: formData.email,
-      name: isLogin ? formData.email.split('@')[0] : formData.name
+      name: isLogin ? formData.email.split('@')[0] : formData.name,
+      role: formData.role,
+      vendorId: vendorId || formData.vendorId
     });
     
-    toast({
-      title: "Success",
-      description: isLogin ? "You are now logged in" : "Registration successful",
-      variant: "success"
-    });
+    // Show different success messages based on role
+    if (!isLogin && formData.role === "vendor") {
+      toast({
+        title: "Registration Successful",
+        description: `Your Vendor ID is ${vendorId}. Share this with your clients for them to connect to your service.`,
+        variant: "success",
+        duration: 8000
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: isLogin ? "You are now logged in" : "Registration successful",
+        variant: "success"
+      });
+    }
+  };
+
+  // Generate role icon based on selection
+  const getRoleIcon = (role) => {
+    switch(role) {
+      case "vendor":
+        return <Restaurant className="h-5 w-5 text-primary-600 mr-2" />;
+      case "client-admin":
+        return <People className="h-5 w-5 text-primary-600 mr-2" />;
+      case "employee":
+        return <AccountCircle className="h-5 w-5 text-primary-600 mr-2" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -190,6 +251,75 @@ export default function Login() {
                       onChange={handleChange}
                     />
                   </FormControl>
+                </FormItem>
+              )}
+              
+              {!isLogin && (
+                <FormItem className="mb-4">
+                  <FormLabel htmlFor="role">Select Your Role</FormLabel>
+                  <Select 
+                    value={formData.role} 
+                    onValueChange={(value) => handleSelectChange("role", value)}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vendor">
+                        <div className="flex items-center">
+                          <Restaurant className="h-4 w-4 mr-2" />
+                          <span>Vendor</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="client-admin">
+                        <div className="flex items-center">
+                          <People className="h-4 w-4 mr-2" />
+                          <span>Client Admin</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="employee">
+                        <div className="flex items-center">
+                          <AccountCircle className="h-4 w-4 mr-2" />
+                          <span>Employee</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.role && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      {formData.role === "vendor" ? (
+                        <div className="flex items-center p-2 bg-green-50 rounded-md">
+                          <Info className="h-4 w-4 text-green-500 mr-2" />
+                          <span>You'll receive a Vendor ID after registration to share with your clients.</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center p-2 bg-blue-50 rounded-md">
+                          <Info className="h-4 w-4 text-blue-500 mr-2" />
+                          <span>You'll need a Vendor ID to complete registration.</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </FormItem>
+              )}
+              
+              {!isLogin && (formData.role === "client-admin" || formData.role === "employee") && (
+                <FormItem className="mb-4">
+                  <FormLabel htmlFor="vendorId">Vendor ID</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="vendorId"
+                      name="vendorId"
+                      type="text"
+                      required={!isLogin && (formData.role === "client-admin" || formData.role === "employee")}
+                      placeholder="Enter the ID provided by your vendor"
+                      value={formData.vendorId}
+                      onChange={handleChange}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-gray-500 mt-1">
+                    This ID connects you to your vendor's meal service.
+                  </p>
                 </FormItem>
               )}
 

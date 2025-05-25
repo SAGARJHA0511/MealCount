@@ -4,15 +4,26 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { CheckCircle, CancelCircle, AccessTime } from "@/components/ui/icons";
+import { CheckCircle, CancelCircle, AccessTime, Restaurant } from "@/components/ui/icons";
 import { generateCouponCode, getTimeRemaining, isCutoffTime } from "@/lib/utils";
 import { weeklyMenu } from "@/data/mockData";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function EmployeeDashboard() {
   const [mealStatus, setMealStatus] = useState("pending"); // pending, opted-in, opted-out
+  const [mealOption, setMealOption] = useState("veg"); // veg, non-veg
+  const [specialMeals, setSpecialMeals] = useState([
+    { id: 1, name: "Keto Bowl", price: "$12.99", description: "Low-carb, high-protein meal with grilled chicken, avocado, and mixed greens", vegetarian: false },
+    { id: 2, name: "Protein Power Plate", price: "$14.99", description: "Grilled salmon, quinoa, and roasted vegetables", vegetarian: false },
+    { id: 3, name: "Vegan Buddha Bowl", price: "$11.99", description: "Assortment of fresh vegetables, tofu, and tahini dressing", vegetarian: true }
+  ]);
+  const [selectedSpecial, setSelectedSpecial] = useState(null);
   const [couponCode, setCouponCode] = useState("");
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining());
   const [cutoffPassed, setCutoffPassed] = useState(isCutoffTime());
+  const [showCouponDialog, setShowCouponDialog] = useState(false);
   const { toast } = useToast();
 
   // Update time remaining every minute
@@ -35,13 +46,14 @@ export default function EmployeeDashboard() {
       return;
     }
     
-    const code = generateCouponCode();
+    const code = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit code
     setCouponCode(code);
     setMealStatus("opted-in");
+    setShowCouponDialog(true);
     
     toast({
       title: "Success",
-      description: "You've opted in for tomorrow's meal.",
+      description: `You've opted in for tomorrow's ${mealOption === 'veg' ? 'vegetarian' : 'non-vegetarian'} meal.`,
       variant: "success"
     });
   };
@@ -64,6 +76,19 @@ export default function EmployeeDashboard() {
       variant: "success"
     });
   };
+  
+  const handleMealOptionChange = (value) => {
+    setMealOption(value);
+  };
+  
+  const handleSpecialMealSelect = (meal) => {
+    setSelectedSpecial(meal);
+    toast({
+      title: "Special Meal Selected",
+      description: `You've selected the ${meal.name} (${meal.price})`,
+      variant: "success"
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -72,7 +97,10 @@ export default function EmployeeDashboard() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-6">
         <Card className="mb-6">
           <CardContent className="px-4 py-5 sm:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Today's Meal Status</h2>
+            <div className="flex items-center mb-4">
+              <Restaurant className="h-5 w-5 text-primary-600 mr-2" />
+              <h2 className="text-lg font-medium text-gray-900">Tomorrow's Meal Status</h2>
+            </div>
             
             {cutoffPassed && mealStatus === "pending" ? (
               <div className="rounded-md bg-yellow-50 p-4">
@@ -96,13 +124,38 @@ export default function EmployeeDashboard() {
                   <span className="text-sm font-medium text-amber-600">{timeRemaining}</span>
                 </div>
                 
+                {/* Meal Type Selection (Veg/Non-Veg) */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">Meal Preference</h3>
+                  <RadioGroup 
+                    value={mealOption} 
+                    onValueChange={handleMealOptionChange}
+                    className="flex space-x-8"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="veg" id="veg" />
+                      <Label htmlFor="veg" className="flex items-center">
+                        <span className="h-3 w-3 rounded-full bg-green-500 mr-2"></span>
+                        Vegetarian
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="non-veg" id="non-veg" />
+                      <Label htmlFor="non-veg" className="flex items-center">
+                        <span className="h-3 w-3 rounded-full bg-red-500 mr-2"></span>
+                        Non-Vegetarian
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
                 <div className="mt-5 space-y-3">
                   <Button 
-                    className="w-full bg-secondary-600 hover:bg-secondary-700 text-white flex items-center justify-center"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
                     onClick={handleOptIn}
                   >
                     <CheckCircle className="mr-2 h-5 w-5" />
-                    I'll have a meal tomorrow
+                    Yes, I'll have a meal tomorrow
                   </Button>
                   
                   <Button 
@@ -111,7 +164,7 @@ export default function EmployeeDashboard() {
                     onClick={handleOptOut}
                   >
                     <CancelCircle className="mr-2 h-5 w-5" />
-                    I won't have a meal tomorrow
+                    No, I won't have a meal tomorrow
                   </Button>
                 </div>
               </div>
@@ -125,7 +178,7 @@ export default function EmployeeDashboard() {
                     <div className="ml-3">
                       <h3 className="text-sm font-medium text-green-800">Meal confirmed for tomorrow</h3>
                       <div className="mt-2 text-sm text-green-700">
-                        <p>Your meal has been confirmed. Please use the coupon code below to claim your meal.</p>
+                        <p>Your {mealOption === 'veg' ? 'vegetarian' : 'non-vegetarian'} meal has been confirmed. Please use the coupon code below to claim your meal.</p>
                       </div>
                     </div>
                   </div>
@@ -133,8 +186,22 @@ export default function EmployeeDashboard() {
                 
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500 mb-2">Your coupon code:</p>
-                  <p className="text-2xl font-bold tracking-widest text-primary-600 bg-primary-50 py-3 rounded-lg">{couponCode}</p>
-                  <p className="text-xs text-gray-500 mt-2">Valid for tomorrow only</p>
+                  <div className="flex justify-center space-x-2">
+                    {couponCode.split('').map((digit, idx) => (
+                      <div key={idx} className="w-12 h-16 flex items-center justify-center text-2xl font-bold bg-primary-50 border-2 border-primary-200 rounded-lg">
+                        {digit}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4">Valid for tomorrow only. Show this code to the vendor to collect your meal.</p>
+                  
+                  <Button 
+                    className="mt-4 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    variant="outline"
+                    onClick={() => setShowCouponDialog(true)}
+                  >
+                    View Coupon
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -150,8 +217,59 @@ export default function EmployeeDashboard() {
                     </div>
                   </div>
                 </div>
+                
+                {!cutoffPassed && (
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMealStatus("pending")}
+                    >
+                      Change my mind
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
+          </CardContent>
+        </Card>
+        
+        {/* Special Menu Items */}
+        <Card className="mb-6">
+          <CardContent className="px-4 py-5 sm:p-6">
+            <div className="flex items-center mb-4">
+              <Restaurant className="h-5 w-5 text-amber-500 mr-2" />
+              <h2 className="text-lg font-medium text-gray-900">Special Menu Items</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {specialMeals.map(meal => (
+                <div 
+                  key={meal.id} 
+                  className={`border rounded-lg p-4 ${selectedSpecial?.id === meal.id ? 'ring-2 ring-primary-500' : ''}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-gray-900">{meal.name}</h3>
+                    <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2 py-1 rounded">
+                      {meal.price}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-3">{meal.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-medium px-2 py-1 rounded ${meal.vegetarian ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {meal.vegetarian ? 'Vegetarian' : 'Non-vegetarian'}
+                    </span>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSpecialMealSelect(meal)}
+                    >
+                      Select
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
         
@@ -168,7 +286,16 @@ export default function EmployeeDashboard() {
                         <h3 className="text-sm font-medium text-primary-900">{day.day}, {day.date}</h3>
                       </div>
                       <div className="p-4">
-                        <h4 className="text-sm font-medium text-gray-900 mb-1">Main Course:</h4>
+                        <div className="flex justify-between mb-3">
+                          <h4 className="text-sm font-medium text-gray-900">Vegetarian Option:</h4>
+                          <span className="h-3 w-3 rounded-full bg-green-500"></span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">Vegetarian {day.mainCourse}</p>
+                        
+                        <div className="flex justify-between mb-3">
+                          <h4 className="text-sm font-medium text-gray-900">Non-Vegetarian Option:</h4>
+                          <span className="h-3 w-3 rounded-full bg-red-500"></span>
+                        </div>
                         <p className="text-sm text-gray-600 mb-3">{day.mainCourse}</p>
                         
                         <h4 className="text-sm font-medium text-gray-900 mb-1">Side Dishes:</h4>
@@ -189,6 +316,35 @@ export default function EmployeeDashboard() {
       </main>
       
       <MobileNav />
+      
+      {/* Coupon Code Dialog */}
+      <Dialog open={showCouponDialog} onOpenChange={setShowCouponDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Your Meal Coupon Code</DialogTitle>
+          </DialogHeader>
+          <div className="py-6">
+            <div className="text-center">
+              <div className="flex justify-center space-x-3 mb-4">
+                {couponCode.split('').map((digit, idx) => (
+                  <div key={idx} className="w-16 h-20 flex items-center justify-center text-3xl font-bold bg-primary-50 border-2 border-primary-200 rounded-lg">
+                    {digit}
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-4">
+                Show this 4-digit code to the vendor to collect your {mealOption === 'veg' ? 'vegetarian' : 'non-vegetarian'} meal.
+                <br />Valid for tomorrow only.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setShowCouponDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
