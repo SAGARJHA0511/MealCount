@@ -5,7 +5,6 @@ import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import NotFound from "./pages/not-found";
 import Login from "./pages/Login";
-import RoleSelection from "./pages/RoleSelection";
 import EmployeeDashboard from "./pages/employee/Dashboard";
 import ClientAdminDashboard from "./pages/client-admin/Dashboard";
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -15,7 +14,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
-      <Route path="/role-selection" component={RoleSelection} />
       <Route path="/employee/dashboard" component={EmployeeDashboard} />
       <Route path="/client-admin/dashboard" component={ClientAdminDashboard} />
       <Route path="/vendor/dashboard" component={VendorDashboard} />

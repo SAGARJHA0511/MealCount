@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [vendorId, setVendorId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [, setLocation] = useLocation();
 
@@ -13,11 +14,15 @@ export const AuthProvider = ({ children }) => {
     // Check if user is already logged in from localStorage
     const storedUser = localStorage.getItem("user");
     const storedRole = localStorage.getItem("role");
+    const storedVendorId = localStorage.getItem("vendorId");
     
     if (storedUser) {
       setUser(JSON.parse(storedUser));
       if (storedRole) {
         setRole(storedRole);
+      }
+      if (storedVendorId) {
+        setVendorId(storedVendorId);
       }
     }
     
@@ -27,28 +32,50 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
-    setLocation("/role-selection");
+    
+    // If role is provided during login/registration, set it directly
+    if (userData.role) {
+      setRole(userData.role);
+      localStorage.setItem("role", userData.role);
+      
+      // Store vendor ID if available
+      if (userData.vendorId) {
+        setVendorId(userData.vendorId);
+        localStorage.setItem("vendorId", userData.vendorId);
+      }
+      
+      // Redirect based on role
+      redirectBasedOnRole(userData.role);
+    } else {
+      // Fallback for backward compatibility
+      setLocation("/");
+    }
   };
 
+  const redirectBasedOnRole = (roleValue) => {
+    if (roleValue === "employee") {
+      setLocation("/employee/dashboard");
+    } else if (roleValue === "client-admin") {
+      setLocation("/client-admin/dashboard");
+    } else if (roleValue === "vendor") {
+      setLocation("/vendor/dashboard");
+    }
+  };
+
+  // Keep selectRole for backward compatibility
   const selectRole = (selectedRole) => {
     setRole(selectedRole);
     localStorage.setItem("role", selectedRole);
-    
-    // Redirect based on role
-    if (selectedRole === "employee") {
-      setLocation("/employee/dashboard");
-    } else if (selectedRole === "client-admin") {
-      setLocation("/client-admin/dashboard");
-    } else if (selectedRole === "vendor") {
-      setLocation("/vendor/dashboard");
-    }
+    redirectBasedOnRole(selectedRole);
   };
 
   const logout = () => {
     setUser(null);
     setRole(null);
+    setVendorId(null);
     localStorage.removeItem("user");
     localStorage.removeItem("role");
+    localStorage.removeItem("vendorId");
     setLocation("/");
   };
 
@@ -57,6 +84,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     role,
+    vendorId,
     loading,
     login,
     logout,
