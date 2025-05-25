@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Form, FormItem, FormControl, FormLabel } from "@/components/ui/form";
+import { Form, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -14,6 +14,8 @@ export default function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
+    name: "",
     rememberMe: false
   });
   const { login } = useAuth();
@@ -34,21 +36,42 @@ export default function Login() {
     if (!formData.email || !formData.password) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields",
         variant: "destructive"
       });
       return;
     }
+
+    // Registration specific validation
+    if (!isLogin) {
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: "Error",
+          description: "Passwords do not match",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!formData.name) {
+        toast({
+          title: "Error",
+          description: "Please enter your name",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
-    // Demo login logic - in a real app this would call the API
+    // Demo login/register logic - in a real app this would call the API
     login({
       email: formData.email,
-      name: formData.email.split('@')[0]
+      name: isLogin ? formData.email.split('@')[0] : formData.name
     });
     
     toast({
       title: "Success",
-      description: "You are now logged in",
+      description: isLogin ? "You are now logged in" : "Registration successful",
       variant: "success"
     });
   };
@@ -66,25 +89,19 @@ export default function Login() {
         <Card>
           <CardContent className="pt-6">
             <div className="mb-6 flex justify-center">
-              <div className="inline-flex rounded-md" role="group">
+              <div className="inline-flex rounded-md shadow-sm" role="group">
                 <Button
                   type="button"
-                  className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
-                    isLogin 
-                      ? "text-white bg-primary-600" 
-                      : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-100"
-                  }`}
+                  variant={isLogin ? "default" : "outline"}
+                  className="rounded-l-lg"
                   onClick={() => setIsLogin(true)}
                 >
                   Login
                 </Button>
                 <Button
                   type="button"
-                  className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-                    !isLogin 
-                      ? "text-white bg-primary-600" 
-                      : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-100"
-                  }`}
+                  variant={!isLogin ? "default" : "outline"}
+                  className="rounded-r-lg"
                   onClick={() => setIsLogin(false)}
                 >
                   Register
@@ -93,8 +110,26 @@ export default function Login() {
             </div>
             
             <Form onSubmit={handleSubmit}>
-              <FormItem>
-                <FormLabel htmlFor="email">Email address</FormLabel>
+              {!isLogin && (
+                <FormItem className="mb-4">
+                  <FormLabel htmlFor="name">Full Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      required={!isLogin}
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={handleChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+              
+              <FormItem className="mb-4">
+                <FormLabel htmlFor="email">Email Address</FormLabel>
                 <FormControl>
                   <Input
                     id="email"
@@ -109,14 +144,14 @@ export default function Login() {
                 </FormControl>
               </FormItem>
 
-              <FormItem className="mt-4">
+              <FormItem className="mb-4">
                 <FormLabel htmlFor="password">Password</FormLabel>
                 <FormControl>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    autoComplete="current-password"
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                     required
                     placeholder="••••••••"
                     value={formData.password}
@@ -125,31 +160,51 @@ export default function Login() {
                 </FormControl>
               </FormItem>
 
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center">
-                  <Checkbox
-                    id="remember-me"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, rememberMe: checked })
-                    }
-                  />
-                  <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                    Remember me
-                  </Label>
-                </div>
+              {!isLogin && (
+                <FormItem className="mb-4">
+                  <FormLabel htmlFor="confirmPassword">Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      required={!isLogin}
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
 
-                <div className="text-sm">
-                  <Link href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                    Forgot your password?
-                  </Link>
+              {isLogin && (
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <Checkbox
+                      id="remember-me"
+                      name="rememberMe"
+                      checked={formData.rememberMe}
+                      onCheckedChange={(checked) => 
+                        setFormData({ ...formData, rememberMe: checked })
+                      }
+                    />
+                    <Label htmlFor="remember-me" className="ml-2 text-sm text-gray-900">
+                      Remember me
+                    </Label>
+                  </div>
+
+                  <div className="text-sm">
+                    <Link href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                      Forgot your password?
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="mt-6">
-                <Button type="submit" className="w-full bg-primary-600 hover:bg-primary-700">
-                  {isLogin ? "Sign in" : "Sign up"}
+                <Button type="submit" className="w-full" variant="default">
+                  {isLogin ? "Sign in" : "Create Account"}
                 </Button>
               </div>
             </Form>
