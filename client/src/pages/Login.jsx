@@ -12,8 +12,8 @@ import { Info, Restaurant, People, AccountCircle } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Login() {
-  // Default to registration mode for new users
-  const [isLogin, setIsLogin] = useState(false);
+  // Start with login mode for returning users
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -26,13 +26,13 @@ export default function Login() {
   const { login } = useAuth();
   const { toast } = useToast();
   
-  // Show a welcome message for new users
+  // Show a welcome message for first-time visitors
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisitedBefore");
     if (!hasVisited) {
       toast({
         title: "Welcome to MealMate!",
-        description: "Please register to get started with our meal management system.",
+        description: "Sign in if you have an account, or register to get started.",
         duration: 5000
       });
       localStorage.setItem("hasVisitedBefore", "true");
@@ -54,6 +54,16 @@ export default function Login() {
     });
   };
 
+  // Mock user database for demo purposes
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const savedUsers = localStorage.getItem("registeredUsers");
+    return savedUsers ? JSON.parse(savedUsers) : [
+      { email: "vendor@example.com", password: "password", name: "Vendor Demo", role: "vendor", vendorId: "V-12345" },
+      { email: "admin@example.com", password: "password", name: "Admin Demo", role: "client-admin", vendorId: "V-12345" },
+      { email: "employee@example.com", password: "password", name: "Employee Demo", role: "employee", vendorId: "V-12345" }
+    ];
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -67,8 +77,50 @@ export default function Login() {
       return;
     }
 
-    // Registration specific validation
+    // Handle login
+    if (isLogin) {
+      // Find user by email
+      const user = registeredUsers.find(u => u.email === formData.email);
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "No account found with this email. Please register first.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Check password (in a real app, this would be properly hashed)
+      if (user.password !== formData.password) {
+        toast({
+          title: "Error",
+          description: "Invalid password. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Successfully authenticated - log the user in
+      login({
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        vendorId: user.vendorId
+      });
+      
+      toast({
+        title: "Success",
+        description: "You are now logged in",
+        variant: "success"
+      });
+      
+      return;
+    }
+    
+    // Handle registration
     if (!isLogin) {
+      // Registration specific validation
       if (formData.password !== formData.confirmPassword) {
         toast({
           title: "Error",
@@ -105,35 +157,63 @@ export default function Login() {
         });
         return;
       }
-    }
-    
-    // Generate vendor ID for new vendors
-    let vendorId = "";
-    if (!isLogin && formData.role === "vendor") {
-      vendorId = "V-" + Math.floor(10000 + Math.random() * 90000);
-    }
-    
-    // Demo login/register logic - in a real app this would call the API
-    login({
-      email: formData.email,
-      name: isLogin ? formData.email.split('@')[0] : formData.name,
-      role: formData.role,
-      vendorId: vendorId || formData.vendorId
-    });
-    
-    // Show different success messages based on role
-    if (!isLogin && formData.role === "vendor") {
-      toast({
-        title: "Registration Successful",
-        description: `Your Vendor ID is ${vendorId}. Share this with your clients for them to connect to your service.`,
-        variant: "success",
-        duration: 8000
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: isLogin ? "You are now logged in" : "Registration successful",
-        variant: "success"
+      
+      // Check if email is already registered
+      if (registeredUsers.some(u => u.email === formData.email)) {
+        toast({
+          title: "Error",
+          description: "This email is already registered. Please log in instead.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Generate vendor ID for new vendors
+      let vendorId = formData.vendorId;
+      if (formData.role === "vendor") {
+        vendorId = "V-" + Math.floor(10000 + Math.random() * 90000);
+      }
+      
+      // Register new user
+      const newUser = {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        role: formData.role,
+        vendorId: vendorId
+      };
+      
+      const updatedUsers = [...registeredUsers, newUser];
+      setRegisteredUsers(updatedUsers);
+      localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers));
+      
+      // Show different success messages based on role
+      if (formData.role === "vendor") {
+        toast({
+          title: "Registration Successful",
+          description: `Your Vendor ID is ${vendorId}. Share this with your clients for them to connect to your service.`,
+          variant: "success",
+          duration: 8000
+        });
+      } else {
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created. You can now log in.",
+          variant: "success"
+        });
+      }
+      
+      // Switch to login mode after successful registration
+      setIsLogin(true);
+      
+      // Clear form except for email to make login easier
+      setFormData({
+        ...formData,
+        password: "",
+        confirmPassword: "",
+        name: "",
+        role: "",
+        vendorId: ""
       });
     }
   };

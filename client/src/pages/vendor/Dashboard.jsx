@@ -18,25 +18,61 @@ export default function VendorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuEditorOpen, setMenuEditorOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [menuType, setMenuType] = useState("non-veg"); // "veg" or "non-veg"
+  const [weeklyMenus, setWeeklyMenus] = useState(() => {
+    // Initialize with both veg and non-veg menus
+    const savedMenus = localStorage.getItem("weeklyMenus");
+    if (savedMenus) {
+      return JSON.parse(savedMenus);
+    }
+    
+    // Initialize with duplicate menus but mark one as vegetarian
+    return {
+      veg: weeklyMenu.map(day => ({
+        ...day,
+        mainCourse: `Vegetarian ${day.mainCourse.replace("Chicken", "Tofu").replace("Beef", "Mushroom").replace("Fish", "Eggplant")}`,
+        isVegetarian: true
+      })),
+      "non-veg": weeklyMenu
+    };
+  });
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleOpenMenuEditor = () => {
+  const handleOpenMenuEditor = (type = "non-veg") => {
+    setMenuType(type);
     setMenuEditorOpen(true);
   };
 
-  const handleDaySelect = (day) => {
-    setSelectedDay(day);
+  const handleDaySelect = (day, type = "non-veg") => {
+    setSelectedDay({...day, menuType: type});
+    setMenuType(type);
   };
 
   const handleCloseMenuEditor = () => {
     setMenuEditorOpen(false);
     setSelectedDay(null);
+    
+    // Save menus to localStorage
+    localStorage.setItem("weeklyMenus", JSON.stringify(weeklyMenus));
+    
     toast({
       title: "Menu Updated",
-      description: "Your menu changes have been saved successfully.",
+      description: `Your ${menuType === "veg" ? "vegetarian" : "non-vegetarian"} menu has been updated successfully.`,
       variant: "success"
     });
+  };
+  
+  const updateMenuDay = (day, type, updatedValues) => {
+    const updatedMenus = {
+      ...weeklyMenus,
+      [type]: weeklyMenus[type].map(d => 
+        d.day === day.day ? {...d, ...updatedValues} : d
+      )
+    };
+    setWeeklyMenus(updatedMenus);
+    localStorage.setItem("weeklyMenus", JSON.stringify(updatedMenus));
   };
 
   return (
@@ -113,22 +149,22 @@ export default function VendorDashboard() {
                 />
               </div>
               
-              {/* Weekly menu management */}
+              {/* Weekly menu management - Non-Vegetarian */}
               <div className="mt-8">
                 <Card>
                   <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
                     <div className="flex items-center">
-                      <Restaurant className="h-5 w-5 text-primary-600 mr-2" />
-                      <h2 className="text-lg font-medium text-gray-900">Weekly Menu</h2>
+                      <Restaurant className="h-5 w-5 text-red-500 mr-2" />
+                      <h2 className="text-lg font-medium text-gray-900">Non-Vegetarian Weekly Menu</h2>
                     </div>
                     <div>
                       <Button 
                         className="inline-flex items-center"
                         variant="default"
-                        onClick={handleOpenMenuEditor}
+                        onClick={() => handleOpenMenuEditor("non-veg")}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Edit Menu
+                        Edit Non-Veg Menu
                       </Button>
                     </div>
                   </div>
@@ -146,8 +182,8 @@ export default function VendorDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody className="bg-white divide-y divide-gray-200">
-                          {weeklyMenu.map((day) => (
-                            <TableRow key={day.date}>
+                          {weeklyMenus["non-veg"].map((day) => (
+                            <TableRow key={`nonveg-${day.date}`}>
                               <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{day.day}</TableCell>
                               <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.mainCourse}</TableCell>
                               <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.sideDishes}</TableCell>
@@ -161,7 +197,69 @@ export default function VendorDashboard() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => handleDaySelect(day)}
+                                  onClick={() => handleDaySelect(day, "non-veg")}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Weekly menu management - Vegetarian */}
+              <div className="mt-8">
+                <Card>
+                  <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Restaurant className="h-5 w-5 text-green-500 mr-2" />
+                      <h2 className="text-lg font-medium text-gray-900">Vegetarian Weekly Menu</h2>
+                    </div>
+                    <div>
+                      <Button 
+                        className="inline-flex items-center"
+                        variant="default"
+                        onClick={() => handleOpenMenuEditor("veg")}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Veg Menu
+                      </Button>
+                    </div>
+                  </div>
+                  <CardContent className="px-4 py-0 sm:px-6">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-gray-50">
+                          <TableRow>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Main Course</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Side Dishes</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dessert</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</TableHead>
+                            <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="bg-white divide-y divide-gray-200">
+                          {weeklyMenus["veg"].map((day) => (
+                            <TableRow key={`veg-${day.date}`}>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{day.day}</TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.mainCourse}</TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.sideDishes}</TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.dessert}</TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap">
+                                <Badge variant="success" className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                  Published
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDaySelect(day, "veg")}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -212,10 +310,19 @@ export default function VendorDashboard() {
       <Dialog open={menuEditorOpen} onOpenChange={setMenuEditorOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Weekly Menu</DialogTitle>
+            <DialogTitle>
+              Edit {menuType === "veg" ? "Vegetarian" : "Non-Vegetarian"} Weekly Menu
+            </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-4">
+              <div className="flex items-center mb-2 -mt-2 space-x-2">
+                <span className={`w-3 h-3 rounded-full ${menuType === "veg" ? "bg-green-500" : "bg-red-500"}`}></span>
+                <span className="text-sm font-medium">
+                  {menuType === "veg" ? "Vegetarian Menu" : "Non-Vegetarian Menu"}
+                </span>
+              </div>
+              
               <div>
                 <Label htmlFor="menu-day">Day</Label>
                 <Select defaultValue="Monday">
@@ -223,7 +330,7 @@ export default function VendorDashboard() {
                     <SelectValue placeholder="Select day" />
                   </SelectTrigger>
                   <SelectContent>
-                    {weeklyMenu.map(day => (
+                    {weeklyMenus[menuType].map(day => (
                       <SelectItem key={day.day} value={day.day}>{day.day}</SelectItem>
                     ))}
                   </SelectContent>
@@ -232,7 +339,11 @@ export default function VendorDashboard() {
               
               <div>
                 <Label htmlFor="main-course">Main Course</Label>
-                <Input id="main-course" defaultValue="Grilled Chicken Breast" />
+                <Input 
+                  id="main-course" 
+                  placeholder={menuType === "veg" ? "Vegetarian Lasagna" : "Grilled Chicken Breast"}
+                  defaultValue={menuType === "veg" ? "Vegetarian Pasta" : "Grilled Chicken Breast"} 
+                />
               </div>
               
               <div>
@@ -250,14 +361,20 @@ export default function VendorDashboard() {
                 <Textarea 
                   id="description" 
                   placeholder="Describe the meal..."
-                  defaultValue="A healthy meal featuring lean protein and nutritious sides."
+                  defaultValue={menuType === "veg" 
+                    ? "A nutritious vegetarian meal with plant-based protein and fresh vegetables." 
+                    : "A healthy meal featuring lean protein and nutritious sides."
+                  }
                 />
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="vegetarian-option">Vegetarian Option Available</Label>
-                <input type="checkbox" id="vegetarian-option" defaultChecked />
-              </div>
+              {menuType === "non-veg" && (
+                <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Remember to update your vegetarian menu separately with plant-based alternatives.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
