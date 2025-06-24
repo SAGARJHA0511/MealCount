@@ -71,15 +71,15 @@ export const insertMealOptSchema = createInsertSchema(mealOpts).pick({
   couponCode: true,
 });
 
-// Export types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// // Export types
+// export type User = typeof users.$inferSelect;
+// export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type Meal = typeof meals.$inferSelect;
-export type InsertMeal = z.infer<typeof insertMealSchema>;
+// export type Meal = typeof meals.$inferSelect;
+// export type InsertMeal = z.infer<typeof insertMealSchema>;
 
-export type Feedback = typeof feedback.$inferSelect;
-export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+// export type Feedback = typeof feedback.$inferSelect;
+// export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
-export type MealOpt = typeof mealOpts.$inferSelect;
-export type InsertMealOpt = z.infer<typeof insertMealOptSchema>;
+// export type MealOpt = typeof mealOpts.$inferSelect;
+// export type InsertMealOpt = z.infer<typeof insertMealOptSchema>;
