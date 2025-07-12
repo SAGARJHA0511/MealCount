@@ -6,7 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { CheckCircle, CancelCircle, AccessTime, Restaurant } from "@/components/ui/icons";
 import { generateCouponCode, getTimeRemaining, isCutoffTime } from "@/lib/utils";
-import { weeklyMenu } from "@/data/mockData";
+// import { weeklyMenu } from "@/data/mockData";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
